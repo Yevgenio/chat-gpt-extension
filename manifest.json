@@ -1,0 +1,34 @@
+{
+    "manifest_version": 3,
+    "name": "ChatGPT Enhancer",
+    "version": "1.0",
+    "description": "Enhance the ChatGPT experience with better visuals and interactions.",
+    "permissions": ["activeTab", "scripting"],
+    "host_permissions": [
+      "https://chat.openai.com/*",
+      "https://chatgpt.com/*"
+    ],
+    "content_scripts": [
+      {
+        "matches": [
+          "https://chat.openai.com/*",
+          "https://chatgpt.com/*"
+        ],
+        "js": ["content/content.js"],
+        "css": ["content/content.css"]
+      }
+    ],
+    "background": {
+      "service_worker": "service/service.js"
+    },
+    "action": {
+      "default_popup": "popup/popup.html",
+      "default_icon": "assets/icon.png"
+    },
+    "icons": {
+      "16": "assets/icon.png",
+      "48": "assets/icon.png",
+      "128": "assets/icon.png"
+    }
+}
+  
