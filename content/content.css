@@ -9,7 +9,7 @@
 
 #scrollPercentageCircle {
     position: fixed;
-    right: 15px;
+    left: 250px;
     top: 50%;
     transform: translateY(-50%);
     width: 50px;
@@ -29,7 +29,7 @@
 
 .shortcutButton {
     position: absolute;
-    right: 20px;
+    right: 30px;
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -42,7 +42,7 @@
     font-weight: bold;
     cursor: pointer;
     z-index: 1000;
-    transition: background-color 0.3s ease;
+    transition: transform 0.2s, background-color 0.2s ease;  /* Smooth transition for scaling and color */
 }
 
 .shortcutButton:hover {

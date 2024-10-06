@@ -84,42 +84,10 @@ function updateShortcutPositions() {
         // Calculate the distance from the center of the screen
         // const distanceFromCenter = articleRect.top - centerY + articleRect.height / 2; // relative position
         // const distanceFromCenter = (articleRect.top - centerY + articleRect.height / 2) / 10; // divided relative position
-        const distanceFromCenter = (articleRect.top - centerY + articleRect.height / 2) / 20; // divided relative position
+        const distanceFromCenter = (articleRect.top - centerY + articleRect.height / 2) / 10; // divided relative position
 
         // Adjust the button position to match the article's relative position
         shortcutButton.style.top = `${centerY + distanceFromCenter}px`;
-    });
-}
-
-function updateShortcutPositions2() {
-    const articles = document.querySelectorAll('article');
-    const shortcutButtons = document.querySelectorAll('.shortcutButton');
-    const windowHeight = window.innerHeight;
-    const centerY = windowHeight / 2;  // Center of the screen
-
-    const spacing = 50;  // Define the fixed spacing between each shortcut button (in pixels)
-
-    // Calculate the index of the article closest to the center of the screen
-    let closestIndex = 0;
-    let smallestDistance = Number.MAX_VALUE;
-    
-    articles.forEach((article, index) => {
-        const articleRect = article.getBoundingClientRect();
-        const distanceFromCenter = Math.abs(articleRect.top - centerY + articleRect.height / 2);
-        
-        // Find the article closest to the center
-        if (distanceFromCenter < smallestDistance) {
-            smallestDistance = distanceFromCenter;
-            closestIndex = index;
-        }
-    });
-
-    // Position the buttons based on the closest article index
-    shortcutButtons.forEach((shortcutButton, index) => {
-        // Position the button with constant spacing
-        const offsetFromCenter = (index - closestIndex) * spacing;
-        shortcutButton.style.top = `${centerY + offsetFromCenter}px`;
-        shortcutButton.style.position = 'fixed';  // Ensure buttons stay fixed on the screen
     });
 }
 
