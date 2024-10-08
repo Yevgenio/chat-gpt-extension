@@ -1,19 +1,39 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>ChatGPT Enhancer</title>
-  <link rel="stylesheet" href="popup.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extension Popup</title>
+    <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <h1>Enhance ChatGPT</h1>
-  <label>
-    <input type="checkbox" id="darkModeToggle"> Enable Dark Mode
-  </label>
-  <label>
-    <input type="checkbox" id="highlightToggle"> Highlight Important Responses
-  </label>
-  <button id="applyChanges">Apply Changes</button>
-  
-  <script src="popup.js"></script>
+    <div class="tabs">
+        <button class="tab-button" data-tab="general">General</button>
+        <button class="tab-button" data-tab="theme">Theme</button>
+    </div>
+
+    <div id="general" class="tab-content active">
+        <h2>General Settings</h2>
+        <!-- General functionality content here -->
+    </div>
+
+    <div id="theme" class="tab-content">
+        <h2>Theme Settings</h2>
+
+        <!-- Toggle for custom styling on/off -->
+        <label for="customStylingToggle">Enable Custom Styling:</label>
+        <input type="checkbox" id="customStylingToggle">
+
+        <h3>Customize Colors</h3>
+        <label for="gray700">Gray 700:</label>
+        <input type="color" id="gray700">
+
+        <label for="white">White:</label>
+        <input type="color" id="white">
+
+        <button id="restoreDefaults">Restore Defaults</button>
+    </div>
+
+    <script src="popup.js"></script>
 </body>
 </html>

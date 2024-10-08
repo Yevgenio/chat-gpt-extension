@@ -1,50 +1,119 @@
-.agent-turn {
-    border: 2px solid rgba(0, 255, 0, 0.2);
-    padding: 10px;
-    border-radius: 10px;
-    /* margin-bottom: 10px; */
+/* :root {
+    --white: rgb(255, 255, 255);
+    --black: rgb(0, 0, 0);
+    --gray-50: rgb(249, 249, 249);
+    --gray-100: rgb(236, 236, 236);
+    --gray-200: rgb(227, 227, 227);
+    --gray-300: rgb(205, 205, 205);
+    --gray-400: rgb(181, 181, 181);
+    --gray-500: rgb(155, 155, 155);
+    --gray-600: rgb(103, 103, 103);
+    --gray-700: rgb(66, 66, 66);
+    --gray-750: rgb(47, 47, 47);
+    --gray-800: rgb(33, 33, 33);
+    --gray-900: rgb(23, 23, 23);
+    --gray-950: rgb(13, 13, 13);
+    --red-500: rgb(239, 68, 68);
+    --red-700: rgb(185, 28, 28);
+    --brand-purple: rgb(171, 104, 255);
+
+    --transparent: #00000000;
+    --main-surface-primary: var(--gray-800);
+    --main-surface-secondary: var(--gray-750);
+    --main-surface-tertiary: var(--gray-700);
+    --sidebar-surface-primary: var(--gray-900);
+    --sidebar-surface-secondary: var(--gray-800);
+    --sidebar-surface-tertiary: var(--gray-750);
+    
 }
+
+.dark {
+    --main-surface-background: rgba(33, 33, 33, .9);
+    --composer-surface: rgba(50, 50, 50, .8);
+    --composer-bar_mask-grace-area: 55px;
+    --dot-color: var(--white);
+    --text-primary: var(--gray-100);
+    --text-secondary: var(--gray-400);
+    --text-tertiary: var(--gray-500);
+    --text-quaternary: var(--gray-600);
+    --text-placeholder: hsla(0, 0%, 100%, .8);
+    --text-error: #f93a37;
+    --main-surface-primary: var(--gray-800);
+    --main-surface-secondary: var(--gray-750);
+    --main-surface-tertiary: var(--gray-700);
+    --sidebar-surface-primary: var(--gray-900);
+    --sidebar-surface-secondary: var(--gray-800);
+    --sidebar-surface-tertiary: var(--gray-750);
+    --link: #7ab7ff;
+    --link-hover: #5e83b3;
+} */
+
+.agent-turn {
+    border: 2px solid var(--main-surface-tertiary);
+    padding: 10px;
+    border-radius: 20px;
+}
+
+.agent-turn > *:first-child > *:nth-child(2) > *:first-child {
+    border: 2px solid var(--main-surface-tertiary);
+    border-radius: 15px;
+}
+
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+/* Scroll Percentage Circle */
 #scrollPercentageCircle {
     position: fixed;
-    left: 250px;
-    top: 50%;
-    transform: translateY(-50%);
+    right: 230px;
+    top: 300px;
     width: 50px;
     height: 50px;
-    border-radius: 50%;
-    background-color: #0e5001;
-    color: white;
+    background-color: var(--main-surface-tertiary);
+    color: var(--text-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: 50%;
     font-size: 14px;
     font-weight: bold;
-    z-index: 1000;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    transition: background-color 0.3s ease;
 }
 
+/* ======================================================================= */
+
+/* Shortcut Container */
+#shortcutContainer {
+    width: 200px;
+    height: 100vh;
+    
+    background-color: var(--sidebar-surface-primary);
+    overflow-y: auto;
+    padding: 10px;
+    box-shadow: -2px 0 5px var(--main-surface-tertiary);
+    position: relative;
+}
+
+/* Shortcut Buttons */
 .shortcutButton {
-    position: absolute;
-    right: 30px;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #333;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    font-weight: bold;
+    margin: 10px;
+    background-color: var(--main-surface-primary);
+    color: var(--text-secondary);
+    padding: 10px;
+    border: 2px solid var(--main-surface-tertiary);
+    text-align: center;
+    border-radius: 10px;
+    display: block;
     cursor: pointer;
-    z-index: 1000;
-    transition: transform 0.2s, background-color 0.2s ease;  /* Smooth transition for scaling and color */
+    transition: background-color 0.5s ease;
 }
 
 .shortcutButton:hover {
-    background-color: #666;
+    background-color: var(--sidebar-surface-tertiary);
 }
+
+/* Styling when the article is in view */
+.shortcutButton.in-view {
+    background-color: var(--main-surface-tertiary);
+    transition: background-color 0.2s ease;
+}
+
