@@ -1,13 +1,9 @@
-// Run `manipulateMessages` on page load to apply changes to existing messages
-document.addEventListener('DOMContentLoaded', () => {
-    manipulateMessages();
-});
-
 // Observer to monitor dynamic content (new messages or conversation changes)
 const observer = new MutationObserver((mutations) => {
     let newContentDetected = false;
 
     mutations.forEach(mutation => {
+        // Check added nodes for new articles or any changes within existing articles
         mutation.addedNodes.forEach(node => {
             if (node.nodeType === 1) {
                 if (node.tagName.toLowerCase() === 'article') {
@@ -18,15 +14,18 @@ const observer = new MutationObserver((mutations) => {
             }
         });
 
+        // Check if articles were removed
         mutation.removedNodes.forEach(node => {
             if (node.nodeType === 1 && node.querySelectorAll && node.querySelectorAll('article').length > 0) {
                 newContentDetected = true;  // Detect when articles are removed (e.g., conversation switch)
             }
         });
+
     });
 
+    // If any relevant mutations are detected, update the shortcut container
     if (newContentDetected) {
-        manipulateMessages();  // Apply changes when new or removed content is detected
+        manipulateMessages();  // Re-run to update shortcuts and proxy buttons
     }
 });
 
@@ -53,9 +52,6 @@ function handleShortcutContainer() {
         pageContainer.appendChild(shortcutContainer);
     }
 
-    // Clear the existing contents of the shortcut container
-    shortcutContainer.innerHTML = '';
-
     // Create the article shortcuts inside the shortcut container
     createArticleShortcuts(shortcutContainer);
 }
@@ -63,10 +59,12 @@ function handleShortcutContainer() {
 // Create shortcut buttons for each article inside the container
 function createArticleShortcuts(shortcutContainer) {
     const articles = document.querySelectorAll('article');
-    const chatContainer = articles[0].parentElement.parentElement;
+    const chatContainer = articles ? articles[0].parentElement.parentElement : null;
+    
+    // Clear the existing contents of the shortcut container
+    shortcutContainer.innerHTML = '';
 
     articles.forEach((article, index) => {
-        console.log(article.node);
         const shortcutButton = document.createElement('div');
         shortcutButton.classList.add('shortcutButton');  // Apply styles via CSS
         shortcutButton.innerText = index + 1;  // Number the buttons
@@ -90,7 +88,7 @@ function createArticleShortcuts(shortcutContainer) {
         // Find the "Previous response" and "Next response" buttons in the article
         const previousResponseButton = article.querySelector('button[aria-label="Previous response"]');
         const nextResponseButton = article.querySelector('button[aria-label="Next response"]');
-        if(previousResponseButton) {
+        if(previousResponseButton || nextResponseButton) {
             const proxyBranches = previousResponseButton.parentElement.cloneNode(true);
             const previousProxyButton = proxyBranches.querySelector('button[aria-label="Previous response"]');
             const nextProxyButton = proxyBranches.querySelector('button[aria-label="Next response"]');
@@ -101,16 +99,22 @@ function createArticleShortcuts(shortcutContainer) {
             nextProxyButton.addEventListener('click', () => {
                 nextResponseButton.click();  // Simulate the click on the original button
             });
-            //proxyButton.classList.add('proxyButton');  
 
-            // Simulate click on the original button when proxy button is clicked
-            //proxyButton.addEventListener('click', () => {
-            //    originalButton.click();  // Simulate the click on the original button
-            //});
+            previousResponseButton.addEventListener('click', () => {
+                // Delay the update of the shortcuts to ensure the DOM updates fully
+                setTimeout(() => {
+                    createArticleShortcuts(shortcutContainer);  // Refresh the shortcut container on response change
+                }, 300);  // Add a short delay
+            });
+            nextResponseButton.addEventListener('click', () => {
+                // Delay the update of the shortcuts to ensure the DOM updates fully
+                setTimeout(() => {
+                    createArticleShortcuts(shortcutContainer);  // Refresh the shortcut container on response change
+                }, 300);  // Add a short delay
+            });
 
-            // Append the proxy buttons inside the shortcut button
-            shortcutButton.appendChild(proxyBranches);
-
+            // shortcutButton.appendChild(proxyBranches);
+            shortcutContainer.appendChild(proxyBranches);
         }
 
         shortcutContainer.appendChild(shortcutButton);
@@ -129,8 +133,8 @@ function updateShortcutPositions() {
     const articles = document.querySelectorAll('article');
     const shortcutButtons = document.querySelectorAll('.shortcutButton');
     const windowHeight = window.innerHeight;
-    const viewTop = windowHeight * 0.25;
-    const viewBottom = windowHeight * 0.75;
+    const viewTop = windowHeight * 0.3;
+    const viewBottom = windowHeight * 0.7;
 
     let firstInViewIndex = null;
 

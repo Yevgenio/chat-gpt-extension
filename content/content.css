@@ -54,7 +54,7 @@
     border-radius: 20px;
 }
 
-.agent-turn > *:first-child > *:nth-child(2) > *:first-child {
+.agent-turn > *:first-child > *:nth-last-child(2) > *:first-child {
     border: 2px solid var(--main-surface-tertiary);
     border-radius: 15px;
 }
@@ -83,7 +83,7 @@
 
 /* Shortcut Container */
 #shortcutContainer {
-    width: 200px;
+    width: 150px;
     height: 100vh;
     
     background-color: var(--sidebar-surface-primary);
@@ -97,9 +97,9 @@
 .shortcutButton {
     margin: 10px;
     background-color: var(--main-surface-primary);
+    border: 2px solid var(--main-surface-tertiary);
     color: var(--text-secondary);
     padding: 10px;
-    border: 2px solid var(--main-surface-tertiary);
     text-align: center;
     border-radius: 10px;
     display: block;
@@ -114,6 +114,7 @@
 /* Styling when the article is in view */
 .shortcutButton.in-view {
     background-color: var(--main-surface-tertiary);
+    border: 2px solid var(--text-secondary);
     transition: background-color 0.2s ease;
 }
 
