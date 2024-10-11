@@ -63,10 +63,10 @@
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /* Scroll Percentage Circle */
-#scrollPercentageCircle {
+/* #scrollPercentageCircle {
     position: fixed;
-    right: 230px;
-    top: 300px;
+    left: 250px;
+    bottom: 70px;
     width: 50px;
     height: 50px;
     background-color: var(--main-surface-tertiary);
@@ -77,7 +77,7 @@
     border-radius: 50%;
     font-size: 14px;
     font-weight: bold;
-}
+} */
 
 /* ======================================================================= */
 
@@ -115,6 +115,66 @@
 .shortcutButton.in-view {
     background-color: var(--main-surface-tertiary);
     border: 2px solid var(--text-secondary);
+    transition: background-color 0.1s ease;
+}
+
+/* ============================================================= */
+
+/* Control panel styling */
+.controlPanelContainer {
+    position: relative;
+    right: 5px;
+}
+
+/* Control panel styling */
+.controlPanel {
+    display: flex;
+    flex-direction: column;
+    border: 2px solid var(--main-surface-tertiary);
+    padding: 4px;
+    border-radius: 20px;
+    top: 0;
+    /* right: 0; */
+    transition: top 0.2s ease-in-out;  /* Smooth movement */
+}
+
+.upButton, .downButton {
+    background-color: var(--main-surface-primary);
+    color: var(--text-secondary);
+    padding: 3px 10px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
     transition: background-color 0.2s ease;
 }
 
+/* .upButton {
+    border-radius: 20px 20px 10px 10px;
+}
+
+.downButton {
+    border-radius: 10px 10px 20px 20px;
+} */
+
+.upButton:hover, .downButton:hover {
+    background-color: var(--sidebar-surface-tertiary);
+}
+
+/* ==================================================== */
+
+/* Define the smooth glowing pulse effect */
+@keyframes smoothGlowPulse {
+    0% {
+        box-shadow: 0 0 0px 0px var(--text-secondary);
+    }
+    50% {
+        box-shadow: 0 0 15px 10px var(--text-secondary);
+    }
+    100% {
+        box-shadow: 0 0 0px 0px var(--text-secondary);
+    }
+}
+
+.glowPulseEffect {
+    animation: smoothGlowPulse 1s ease-out 1;  /* Smooth, single pulse animation */
+}
