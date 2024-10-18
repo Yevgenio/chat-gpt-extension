@@ -5,6 +5,22 @@ function buildElement(tag, props = {}) {
     return elem;
 }
 
+function traverseDOM(root, path) {
+    let currentElement = root;
+
+    // Iterate through the path and access the specific children
+    for (let i = 0; i < path.length; i++) {
+        if (currentElement && currentElement.children && currentElement.children.length > path[i]) {
+            currentElement = currentElement.children[path[i]];
+        } else {
+            console.log("not found path: ", root, path)
+            return null; // Return null if the path is invalid
+        }
+    }
+    return currentElement;
+}
+
+
 // Observer to monitor dynamic content (new messages or conversation changes)
 const observer = new MutationObserver((mutations) => {
     let newContentDetected = false;
@@ -38,14 +54,70 @@ const observer = new MutationObserver((mutations) => {
 // Start observing the document for changes
 observer.observe(document.body, { childList: true, subtree: true });
 
+// ========================================================================================================
+
+
+
+
+
+
+const elementLibrary = {
+    bodyContainer: null, //actual body element
+    layoutContainer: null, //container with the sidebar and chat
+    sidebarRootContainer: null, //all chats sidebar container
+    chatRootContainer: null, 
+    chatScrollContainer: null, 
+    chatArticlesContainer: null, //all articles container
+    articles: [] // List to store articles by identifier
+}
+
+function initializeElementLibrary() {
+    const bodyContainer = document.body;
+    const layoutContainer = traverseDOM(bodyContainer, [1]);
+    const sidebarRootContainer = traverseDOM(layoutContainer, [0]);
+    const chatRootContainer = traverseDOM(layoutContainer, [1]);
+    const chatScrollContainer = traverseDOM(chatRootContainer, [2,0,0,0,0]);
+    const chatArticlesContainer = traverseDOM(chatScrollContainer, [0,0]);
+
+    elementLibrary.bodyContainer = bodyContainer;
+    elementLibrary.layoutContainer = layoutContainer;
+    elementLibrary.sidebarRootContainer = sidebarRootContainer;
+    elementLibrary.chatRootContainer = chatRootContainer;
+    elementLibrary.chatScrollContainer = chatScrollContainer;
+    elementLibrary.chatArticlesContainer = chatArticlesContainer;
+}
+
+function updateArticleList() {
+    
+    if(!elementLibrary.chatArticlesContainer)
+        initializeElementLibrary();
+
+    const chatArticlesContainer = elementLibrary.chatArticlesContainer;
+
+    const articles = [];
+
+    // Iterate over all the direct children of the parentElement
+    for (let i = 0; i < chatArticlesContainer.children.length; i++) {
+        const child = chatArticlesContainer.children[i];
+        // Check if the child is an article element
+        if (child.tagName === 'ARTICLE') {
+            articles.push(child);
+        }
+    }
+
+    elementLibrary.articles = articles;
+}
+
 // Function to manipulate articles (create scrollable container and shortcuts)
 function manipulateMessages() {
+
+    updateArticleList();
     handleShortcutContainer();
 }
 
 // Function to create or update the shortcut container
 function handleShortcutContainer() {
-    const pageContainer = document.querySelector('body')?.children[1];
+    const layoutContainer = elementLibrary.layoutContainer;
 
     // Check if the shortcutContainer already exists
     let shortcutContainer = document.getElementById('shortcutContainer');
@@ -53,8 +125,8 @@ function handleShortcutContainer() {
     if (!shortcutContainer) { //if doesent exist
         shortcutContainer = buildElement('div',{id: 'shortcutContainer'});
         const resizerElement = buildElement('div',{id: 'resizer'});
-        pageContainer.appendChild(resizerElement);
-        pageContainer.appendChild(shortcutContainer);
+        layoutContainer.appendChild(resizerElement);
+        layoutContainer.appendChild(shortcutContainer);
     }
 
     // Create the article shortcuts inside the shortcut container
@@ -63,7 +135,8 @@ function handleShortcutContainer() {
 
 // Create shortcut buttons for each article inside the container
 function createArticleShortcuts(shortcutContainer) {
-    const articles = document.querySelectorAll('article');
+    const articles = elementLibrary.articles;
+
     const chatContainer = articles ? articles[0].parentElement.parentElement : null;
     
     // Clear the existing contents of the shortcut container
@@ -76,7 +149,7 @@ function createArticleShortcuts(shortcutContainer) {
         
         // Scroll to the article when the shortcut button is clicked
         shortcutButton.addEventListener('click', () => {
-            scrollToArticle(article, chatContainer);
+            scrollToArticle(article, articles[0].parentElement.parentElement);
         });
         
         shortcutContainer.appendChild(shortcutButton);
@@ -84,6 +157,7 @@ function createArticleShortcuts(shortcutContainer) {
         // Find the "Previous response" and "Next response" buttons in the article
         const previousResponseButton = article.querySelector('button[aria-label="Previous response"]');
         const nextResponseButton = article.querySelector('button[aria-label="Next response"]');
+
         if(previousResponseButton || nextResponseButton) {
             const proxyBranches = previousResponseButton.parentElement.cloneNode(true);
             const previousProxyButton = proxyBranches.querySelector('button[aria-label="Previous response"]');
@@ -96,8 +170,8 @@ function createArticleShortcuts(shortcutContainer) {
                 nextResponseButton.click();  // Simulate the click on the original button
             });
 
-            handleBranchClick(previousResponseButton, article, chatContainer, shortcutContainer)
-            handleBranchClick(nextResponseButton, article, chatContainer, shortcutContainer)
+            handleBranchChange(previousResponseButton, article, chatContainer, shortcutContainer)
+            handleBranchChange(nextResponseButton, article, chatContainer, shortcutContainer)
 
             // shortcutButton.appendChild(proxyBranches);
             shortcutContainer.appendChild(proxyBranches);
@@ -113,19 +187,22 @@ function createArticleShortcuts(shortcutContainer) {
 }
 
 // Function to prevent default scrolling when clicking the next or previous buttons
-function handleBranchClick(branchButton, article, chatContainer, shortcutContainer) {
+function handleBranchChange(branchButton, article, chatContainer, shortcutContainer) {
     branchButton.addEventListener('click', (event) => {
-        
+        // Prevent the default scroll behavior
+        event.preventDefault();
 
-        const defaultClassName = chatContainer.className;
-        console.log(`button clicked: ${defaultClassName}`);
-        chatContainer.className = "";
+        // Simulate the original button's functionality
+        branchButton.click();  // Trigger the original click event on the button
+
+        // Restore the previous scroll position
+        setTimeout(() => {
+            scrollToArticle(article, chatContainer);
+        }, 2000);  // Delay to allow the DOM update
 
         setTimeout(() => {
             createArticleShortcuts(shortcutContainer);  // Refresh the shortcut container on response change
         }, 300);  // Add a short delay
-        
-        chatContainer.className = defaultClassName;
     });
 }
 
@@ -168,7 +245,7 @@ function scrollToArticle(article, chatContainer) {
 
 // Update shortcut button positions based on scroll, using `in-view` class for styling
 function updateShortcutPositions() {
-    const articles = document.querySelectorAll('article');
+    const articles = elementLibrary.articles;
     const shortcutButtons = document.querySelectorAll('.shortcutButton');
     const windowHeight = window.innerHeight;
     const viewTop = windowHeight * 0.2; //windowHeight * 0.3;
@@ -330,17 +407,3 @@ function applyGlowEffect(element) {
         element.classList.remove('glowPulseEffect');
     }, 1000);  // Matches the CSS animation duration (1s)
 }
-
-const REGEX_CLASS_SCROLL_TO_BOTTOM = /react-scroll-to-bottom/g,
-    SELECTOR_SCROLL_TO_BOTTOM = '[class^="react-scroll-to-bottom"]',
-    CLASS_REPLACEMENT = "dont-scroll-to-bottom";
-
-
-// // Scroll-to-bottom mutation observer
-// new MutationObserver(() => {
-//     document.querySelectorAll(SELECTOR_SCROLL_TO_BOTTOM).forEach((element) => {
-//         element.className = element.className.replace(REGEX_CLASS_SCROLL_TO_BOTTOM, CLASS_REPLACEMENT);
-//         element.style.overflowY = "auto";
-//     });
-
-// }).observe(document.body, { childList: true, subtree: true });
