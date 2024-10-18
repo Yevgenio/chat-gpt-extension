@@ -178,3 +178,12 @@
 .glowPulseEffect {
     animation: smoothGlowPulse 1s ease-out 1;  /* Smooth, single pulse animation */
 }
+
+/* ==================================================== */
+
+#resizer {
+    width: 3px;  
+    /* cursor: ew-resize; */
+    /* background-color: #888; */
+    position: relative;
+}

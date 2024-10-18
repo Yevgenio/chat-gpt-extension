@@ -1,3 +1,10 @@
+// Utility function to create an element with properties
+function buildElement(tag, props = {}) {
+    const elem = document.createElement(tag);
+    Object.assign(elem, props);  // Assign properties
+    return elem;
+}
+
 // Observer to monitor dynamic content (new messages or conversation changes)
 const observer = new MutationObserver((mutations) => {
     let newContentDetected = false;
@@ -20,7 +27,6 @@ const observer = new MutationObserver((mutations) => {
                 newContentDetected = true;  // Detect when articles are removed (e.g., conversation switch)
             }
         });
-
     });
 
     // If any relevant mutations are detected, update the shortcut container
@@ -34,36 +40,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 
 // Function to manipulate articles (create scrollable container and shortcuts)
 function manipulateMessages() {
-    // createScrollPercentageCircle();
     handleShortcutContainer();
-}
-
-// Create the scroll percentage circle
-// function createScrollPercentageCircle() {
-//     if (document.getElementById('scrollPercentageCircle')) return;  // Avoid re-creating the scroll circle if it already exists
-
-//     const scrollCircle = document.createElement('div');
-//     scrollCircle.id = 'scrollPercentageCircle';
-//     document.body.appendChild(scrollCircle);
-
-//     const chatContainer = document.querySelector('article')?.parentElement.parentElement;
-
-//     if (chatContainer) {
-//         updateScrollPercentage(chatContainer);
-//         chatContainer.addEventListener('scroll', () => updateScrollPercentage(chatContainer));
-//     }
-// }
-
-// Update the scroll percentage based on the container's scroll position
-function updateScrollPercentage(container) {
-    const scrollCircle = document.getElementById('scrollPercentageCircle');
-    const scrollTop = container.scrollTop;
-    const scrollHeight = container.scrollHeight - container.clientHeight;
-    let scrollPercentage = Math.round((scrollTop / scrollHeight) * 100);
-    scrollPercentage = isNaN(scrollPercentage) ? 0 : scrollPercentage;
-
-    // Display the percentage inside the circle
-    scrollCircle.innerText = `${scrollPercentage}%`;
 }
 
 // Function to create or update the shortcut container
@@ -73,69 +50,15 @@ function handleShortcutContainer() {
     // Check if the shortcutContainer already exists
     let shortcutContainer = document.getElementById('shortcutContainer');
     
-    if (!shortcutContainer) {
-        // If it doesn't exist, create a new one
-        shortcutContainer = document.createElement('div');
-        shortcutContainer.id = 'shortcutContainer';
+    if (!shortcutContainer) { //if doesent exist
+        shortcutContainer = buildElement('div',{id: 'shortcutContainer'});
+        const resizerElement = buildElement('div',{id: 'resizer'});
+        pageContainer.appendChild(resizerElement);
         pageContainer.appendChild(shortcutContainer);
     }
 
     // Create the article shortcuts inside the shortcut container
     createArticleShortcuts(shortcutContainer);
-}
-
-// Create control panel for each article with "up" and "down" buttons
-function createControlPanel(article, index, articles, chatContainer) {
-    // Avoid re-creating panel if exists in article
-    if (article.querySelector('.controlPanelContainer')) return;  
-    // Create the control panel container
-    const controlPanelContainer = document.createElement('div');
-    controlPanelContainer.classList.add('controlPanelContainer');  // Add class for CSS styling
-    const controlPanel = document.createElement('div');
-    controlPanel.classList.add('controlPanel');  // Add class for CSS styling
-
-
-    // Create the "Up" button
-    const upButton = document.createElement('button');
-    upButton.innerText = '↑';  // Up arrow for the button
-    upButton.classList.add('upButton');  // Add class for styling
-
-    // Add event listener to scroll to the previous article when "up" is clicked
-    upButton.addEventListener('click', () => {
-        if (index > 0) {
-            const previousArticle = articles[index - 1];
-            scrollToArticle(previousArticle, chatContainer);
-        }
-    });
-
-    // Create the "Down" button
-    const downButton = document.createElement('button');
-    downButton.innerText = '↓';  // Down arrow for the button
-    downButton.classList.add('downButton');  // Add class for styling
-
-    // Add event listener to scroll to the next article when "down" is clicked
-    downButton.addEventListener('click', () => {
-        if (index < articles.length - 1) {
-            const nextArticle = articles[index + 1];
-            scrollToArticle(nextArticle, chatContainer);
-        }
-    });
-
-    // Add the buttons to the control panel
-    controlPanel.appendChild(upButton);
-    controlPanel.appendChild(downButton);
-
-    controlPanelContainer.appendChild(controlPanel);
-
-    // Append the control panel to the article
-    const targetElement = article.children[1].children[0];
-
-    // Append controlPanel to the target element if it exists
-    if (targetElement) {
-        targetElement.appendChild(controlPanelContainer);
-    } else {
-        console.error('Target element not found.');
-    }
 }
 
 // Create shortcut buttons for each article inside the container
@@ -149,13 +72,11 @@ function createArticleShortcuts(shortcutContainer) {
     articles.forEach((article, index) => {
         createControlPanel(article, index, articles, chatContainer);
 
-        const shortcutButton = document.createElement('div');
-        shortcutButton.classList.add('shortcutButton');  // Apply styles via CSS
-        shortcutButton.innerText = index + 1;  // Number the buttons
+        const shortcutButton = buildElement('div', {classList: 'shortcutButton', innerText: index + 1});
         
         // Scroll to the article when the shortcut button is clicked
         shortcutButton.addEventListener('click', () => {
-            scrollToArticle(article, chatContainer);
+            scrollToArticle(article, articles[0].parentElement.parentElement);
         });
         
         shortcutContainer.appendChild(shortcutButton);
@@ -184,9 +105,7 @@ function createArticleShortcuts(shortcutContainer) {
     });
 
     if (chatContainer) {
-        // Attach the scroll event listener to the chat container only (remove window listener)
         chatContainer.addEventListener('scroll', updateShortcutPositions);
-        // Add scroll event
         chatContainer.addEventListener('scroll', handleControlPanelScroll);
     }
 
@@ -230,6 +149,10 @@ function scrollToArticle(article, chatContainer) {
 
     let articleResponse = article.children[1];
     const agentTurn = articleResponse.querySelector('.agent-turn');
+    // ================================================================================================
+    //    const userMessages = document.querySelectorAll('[data-message-author-role="user"]');
+    //    const agentMessages = document.querySelectorAll('[data-message-author-role="assistant"]');
+    // ================================================================================================
     if(agentTurn) {
         articleResponse = article.children[1]?.children[0]?.children[1];
     }
@@ -305,6 +228,54 @@ function scrollToShortcut(index) {
     }
 }
 
+// Create control panel for each article with "up" and "down" buttons
+function createControlPanel(article, index, articles, chatContainer) {
+    // Avoid re-creating panel if exists in article
+    if (article.querySelector('.controlPanelContainer')) return;  
+    // Create the control panel container
+    const controlPanelContainer = buildElement('div',{classList: 'controlPanelContainer'});
+    const controlPanel = buildElement('div',{classList: 'controlPanel'});
+
+
+    // Create the "Up" button
+    const upButton = buildElement('button',{classList: 'upButton', innerText: '↑'});
+
+    // Add event listener to scroll to the previous article when "up" is clicked
+    upButton.addEventListener('click', () => {
+        if (index > 0) {
+            const previousArticle = articles[index - 1];
+            scrollToArticle(previousArticle, chatContainer);
+        }
+    });
+
+    // Create the "Down" button
+    const downButton = buildElement('button',{classList: 'downButton', innerText: '↓'});
+
+    // Add event listener to scroll to the next article when "down" is clicked
+    downButton.addEventListener('click', () => {
+        if (index < articles.length - 1) {
+            const nextArticle = articles[index + 1];
+            scrollToArticle(nextArticle, chatContainer);
+        }
+    });
+
+    // Add the buttons to the control panel
+    controlPanel.appendChild(upButton);
+    controlPanel.appendChild(downButton);
+
+    controlPanelContainer.appendChild(controlPanel);
+
+    // Append the control panel to the article
+    const targetElement = article.children[1].children[0];
+
+    // Append controlPanel to the target element if it exists
+    if (targetElement) {
+        targetElement.appendChild(controlPanelContainer);
+    } else {
+        console.error('Target element not found.');
+    }
+}
+
 // Function to position the control panel dynamically within its container
 function adjustControlPanelPosition(controlPanelContainer, controlPanel) {
     // Get the boundaries of the controlPanelContainer
@@ -360,4 +331,77 @@ function applyGlowEffect(element) {
     setTimeout(() => {
         element.classList.remove('glowPulseEffect');
     }, 1000);  // Matches the CSS animation duration (1s)
+}
+
+
+const REGEX_CLASS_SCROLL_TO_BOTTOM = /react-scroll-to-bottom/g,
+    SELECTOR_SCROLL_TO_BOTTOM = '[class^="react-scroll-to-bottom"]',
+    CLASS_REPLACEMENT = "dont-scroll-to-bottom";
+
+
+// // Scroll-to-bottom mutation observer
+// new MutationObserver(() => {
+//     document.querySelectorAll(SELECTOR_SCROLL_TO_BOTTOM).forEach((element) => {
+//         element.className = element.className.replace(REGEX_CLASS_SCROLL_TO_BOTTOM, CLASS_REPLACEMENT);
+//         element.style.overflowY = "auto";
+//     });
+
+// }).observe(document.body, { childList: true, subtree: true });
+
+
+const TARGET_CLASS = 'react-scroll-to-bottom--css-wjwqj-1n7m0yu';
+
+// Monitor changes to elements with the specified class
+const monitorClassChanges = (element) => {
+    const originalClassName = element.className;
+    console.log("Monitoring class changes on:", element);
+
+    // Observe attribute changes (to detect class modifications)
+    const observer = new MutationObserver((mutationsList) => {
+        mutationsList.forEach((mutation) => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                const currentClassName = mutation.target.className;
+                console.log(`Class changed from "${originalClassName}" to "${currentClassName}"`);
+
+                // Check if scroll functionality is associated with this class
+                if (currentClassName.includes(TARGET_CLASS)) {
+                    console.log("Scroll-related class is active:", currentClassName);
+                } else {
+                    console.log("Scroll-related class has been modified or removed.");
+                }
+            }
+        });
+    });
+
+    observer.observe(element, {
+        attributes: true, // Monitor attribute changes (class name)
+        attributeFilter: ['class'], // Focus on class attribute changes
+    });
+
+    console.log("Class monitoring setup complete.");
+};
+
+// Set up a MutationObserver to find the element with the class
+const observer2 = new MutationObserver((mutationsList) => {
+    mutationsList.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === 1 && node.className.includes(TARGET_CLASS)) {
+                console.log("Element with scroll class detected:", node);
+                monitorClassChanges(node); // Set up class monitoring
+            }
+        });
+    });
+});
+
+// Observe the document body for changes
+observer2.observe(document.body, {
+    childList: true,
+    subtree: true,
+});
+
+// Fallback in case the element is already present
+const existingElement = document.querySelector(`.${TARGET_CLASS}`);
+if (existingElement) {
+    console.log("Element already present:", existingElement);
+    monitorClassChanges(existingElement);
 }
