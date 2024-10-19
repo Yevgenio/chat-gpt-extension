@@ -142,7 +142,7 @@ function createArticleShortcuts(shortcutContainer) {
     // Clear the existing contents of the shortcut container
     shortcutContainer.innerHTML = '';
 
-    articles.forEach((article, index) => {
+    [...articles].slice(1).forEach((article, index) => {
         createControlPanel(article, index, articles, chatContainer);
 
         const shortcutButton = buildElement('div', {classList: 'shortcutButton', innerText: index + 1});

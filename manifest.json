@@ -14,8 +14,8 @@
           "https://chat.openai.com/*",
           "https://chatgpt.com/*"
         ],
-        "js": ["content/content.js"],
-        "css": ["content/content.css"]
+        "js": ["content/content.js","content/folderManager.js"],
+        "css": ["content/content.css", "content/folderManager.css"]
       }
     ],
     "background": {

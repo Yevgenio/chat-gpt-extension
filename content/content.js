@@ -1,9 +1,87 @@
+class ElementNode {
+    constructor(name, element, rootNode, path) {
+        this.name = name;
+        this.element = element;
+        this.rootNode = rootNode;
+        this.path = path;
+    }
+
+    // Method to get the element, redefining if necessary
+    getElement() {
+        if (!this.element) {
+            console.log(`Element ${this.name} is null, attempting to redefine.`);
+            this.redefineElement();
+        }
+        return this.element;
+    }
+
+    // Redefine the element using the rootNode and path
+    redefineElement() {
+        if (!this.rootNode || !this.rootNode.getElement()) {
+            console.log(`Root node or root node's element is undefined in element ${this.name}.`);
+            return null;
+        }
+
+        if (!this.path) {
+            // If no path is specified, use the root node's element directly
+            this.element = this.rootNode.getElement();
+        } else {
+            // Attempt to traverse the DOM to find the element
+            this.element = this.traverseDOM(this.rootNode.getElement(), this.path);
+        }
+
+        if (!this.element) {
+            console.log(`Element ${this.name} could not be redefined.`);
+        }
+    }
+
+    getChild(path) {
+        const currentElement = this.getElement()
+        if(!currentElement) {
+            console.log(`Could not find child of ${this.name} element`)
+            return null;
+        }
+        return this.traverseDOM(currentElement, path);
+
+    }
+
+    // Traverse the DOM to find the element based on the given path
+    traverseDOM(root, path) {
+        let currentElement = root;
+
+        if (!root) {
+            console.log(`Invalid root element for ${this.name}.`);
+            return null;
+        }
+
+        for (let index of path) {
+            if (currentElement && currentElement.children && currentElement.children.length > index) {
+                currentElement = currentElement.children[index];
+            } else {
+                console.log(`In element ${this.name} path was not found: `, path);
+                return null; // Return null if the path is invalid
+            }
+        }
+        // console.log(`In element ${this.name} path was found: `, path);
+        return currentElement;
+    }
+}
+
+
+const nodeBodyContainer = new ElementNode("nodeBodyContainer", document.body, null, null);
+const nodeLayoutContainer = new ElementNode("nodeLayoutContainer", null, nodeBodyContainer, [1]);
+const nodeSidebarRootContainer = new ElementNode("nodeSidebarRootContainer", null, nodeLayoutContainer, [0]);
+const nodeChatRootContainer = new ElementNode("nodeChatRootContainer", null, nodeLayoutContainer, [1]);
+const nodeMain = new ElementNode("nodeMain", null, nodeChatRootContainer, [2]);
+
 // Utility function to create an element with properties
 function buildElement(tag, props = {}) {
     const elem = document.createElement(tag);
     Object.assign(elem, props);  // Assign properties
     return elem;
 }
+
+let timer;
 
 // Observer to monitor dynamic content (new messages or conversation changes)
 const observer = new MutationObserver((mutations) => {
@@ -31,7 +109,10 @@ const observer = new MutationObserver((mutations) => {
 
     // If any relevant mutations are detected, update the shortcut container
     if (newContentDetected) {
-        manipulateMessages();  // Re-run to update shortcuts and proxy buttons
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            manipulateMessages();
+        } , 300)
     }
 });
 
@@ -40,6 +121,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 
 // Function to manipulate articles (create scrollable container and shortcuts)
 function manipulateMessages() {
+    console.log("changes observed");
     handleShortcutContainer();
 }
 
@@ -63,44 +145,48 @@ function handleShortcutContainer() {
 
 // Create shortcut buttons for each article inside the container
 function createArticleShortcuts(shortcutContainer) {
-    const articles = document.querySelectorAll('article');
-    const chatContainer = articles ? articles[0].parentElement.parentElement : null;
-    
+    const articleContainer = nodeMain.getChild([0,0,0,0,0,0]);
+
+    const articles = [...articleContainer.children].slice(1);
+    const chatContainer = articleContainer.parentElement;
+
     // Clear the existing contents of the shortcut container
     shortcutContainer.innerHTML = '';
 
     articles.forEach((article, index) => {
-        createControlPanel(article, index, articles, chatContainer);
+        if(article.tagName == "ARTICLE"){
+            createControlPanel(article, index, articles, chatContainer);
 
-        const shortcutButton = buildElement('div', {classList: 'shortcutButton', innerText: index + 1});
-        
-        // Scroll to the article when the shortcut button is clicked
-        shortcutButton.addEventListener('click', () => {
-            scrollToArticle(article, chatContainer);
-        });
-        
-        shortcutContainer.appendChild(shortcutButton);
-
-        // Find the "Previous response" and "Next response" buttons in the article
-        const previousResponseButton = article.querySelector('button[aria-label="Previous response"]');
-        const nextResponseButton = article.querySelector('button[aria-label="Next response"]');
-        if(previousResponseButton || nextResponseButton) {
-            const proxyBranches = previousResponseButton.parentElement.cloneNode(true);
-            const previousProxyButton = proxyBranches.querySelector('button[aria-label="Previous response"]');
-            const nextProxyButton = proxyBranches.querySelector('button[aria-label="Next response"]');
+            const shortcutButton = buildElement('div', {classList: 'shortcutButton', innerText: index + 1});
             
-            previousProxyButton.addEventListener('click', () => {
-                previousResponseButton.click();  // Simulate the click on the original button
+            // Scroll to the article when the shortcut button is clicked
+            shortcutButton.addEventListener('click', () => {
+                scrollToArticle(article, chatContainer);
             });
-            nextProxyButton.addEventListener('click', () => {
-                nextResponseButton.click();  // Simulate the click on the original button
-            });
+            
+            shortcutContainer.appendChild(shortcutButton);
 
-            handleBranchClick(previousResponseButton, article, chatContainer, shortcutContainer)
-            handleBranchClick(nextResponseButton, article, chatContainer, shortcutContainer)
+            // Find the "Previous response" and "Next response" buttons in the article
+            const previousResponseButton = article.querySelector('button[aria-label="Previous response"]');
+            const nextResponseButton = article.querySelector('button[aria-label="Next response"]');
+            if(previousResponseButton || nextResponseButton) {
+                const proxyBranches = previousResponseButton.parentElement.cloneNode(true);
+                const previousProxyButton = proxyBranches.querySelector('button[aria-label="Previous response"]');
+                const nextProxyButton = proxyBranches.querySelector('button[aria-label="Next response"]');
+                
+                previousProxyButton.addEventListener('click', () => {
+                    previousResponseButton.click();  // Simulate the click on the original button
+                });
+                nextProxyButton.addEventListener('click', () => {
+                    nextResponseButton.click();  // Simulate the click on the original button
+                });
 
-            // shortcutButton.appendChild(proxyBranches);
-            shortcutContainer.appendChild(proxyBranches);
+                handleBranchClick(previousResponseButton, article, chatContainer, shortcutContainer)
+                handleBranchClick(nextResponseButton, article, chatContainer, shortcutContainer)
+
+                // shortcutButton.appendChild(proxyBranches);
+                shortcutContainer.appendChild(proxyBranches);
+            }
         }
     });
 
@@ -116,16 +202,26 @@ function createArticleShortcuts(shortcutContainer) {
 function handleBranchClick(branchButton, article, chatContainer, shortcutContainer) {
     branchButton.addEventListener('click', (event) => {
         
+        // const defaultClassName = chatContainer.className;
+        // console.log(`button clicked: ${defaultClassName}`);
+        // chatContainer.className = "";
 
-        const defaultClassName = chatContainer.className;
-        console.log(`button clicked: ${defaultClassName}`);
-        chatContainer.className = "";
+        // Prevent the default scroll behavior
+        event.preventDefault();
+
+        // Simulate the original button's functionality
+        branchButton.click();  // Trigger the original click event on the button
+
+        // Restore the previous scroll position
+        setTimeout(() => {
+            scrollToArticle(article, chatContainer);
+        }, 2000);  // Delay to allow the DOM update
 
         setTimeout(() => {
             createArticleShortcuts(shortcutContainer);  // Refresh the shortcut container on response change
         }, 300);  // Add a short delay
-        
-        chatContainer.className = defaultClassName;
+
+        // chatContainer.className = defaultClassName;
     });
 }
 
@@ -168,8 +264,12 @@ function scrollToArticle(article, chatContainer) {
 
 // Update shortcut button positions based on scroll, using `in-view` class for styling
 function updateShortcutPositions() {
-    const articles = document.querySelectorAll('article');
-    const shortcutButtons = document.querySelectorAll('.shortcutButton');
+
+    const articleContainer = nodeMain.getChild([0,0,0,0,0,0]);
+    const articles = [...articleContainer.children].slice(1);
+
+    const shortcutButtons = nodeLayoutContainer.getElement().getElementsByClassName("shortcutButton");
+
     const windowHeight = window.innerHeight;
     const viewTop = windowHeight * 0.2; //windowHeight * 0.3;
     const viewBottom = windowHeight * 0.2;// * 0.7;
@@ -177,18 +277,20 @@ function updateShortcutPositions() {
     let firstInViewIndex = null;
 
     articles.forEach((article, index) => {
-        const articleRect = article.getBoundingClientRect();
-        const shortcutButton = shortcutButtons[index];
+        if(article.tagName == "ARTICLE") {
+            const articleRect = article.getBoundingClientRect();
+            const shortcutButton = shortcutButtons[index];
 
-        // Check if the article is in view
-        const articleInView = !(articleRect.bottom < viewTop || articleRect.top > viewBottom);
+            // Check if the article is in view
+            const articleInView = !(articleRect.bottom < viewTop || articleRect.top > viewBottom);
 
-        if (articleInView) {
-            shortcutButton.classList.add('in-view');  // Add class when the article is in view
-            if (firstInViewIndex === null) 
-                firstInViewIndex = index;  // Track the first article in view
-        } else {
-            shortcutButton.classList.remove('in-view');  // Remove class when the article is not in view
+            if (articleInView) {
+                shortcutButton.classList.add('in-view');  // Add class when the article is in view
+                if (firstInViewIndex === null) 
+                    firstInViewIndex = index;  // Track the first article in view
+            } else {
+                shortcutButton.classList.remove('in-view');  // Remove class when the article is not in view
+            }
         }
     });
 
@@ -201,7 +303,7 @@ function updateShortcutPositions() {
 // Function to scroll the shortcut container to make the button of the first article in view visible
 function scrollToShortcut(index) {
     const shortcutContainer = document.getElementById('shortcutContainer');
-    const shortcutButton = document.querySelectorAll('.shortcutButton')[index];
+    const shortcutButton = nodeLayoutContainer.getElement().getElementsByClassName("shortcutButton")[index];
 
     // Scroll the shortcut container to make the button visible
     const shortcutButtonTop = shortcutButton.offsetTop;
@@ -331,10 +433,9 @@ function applyGlowEffect(element) {
     }, 1000);  // Matches the CSS animation duration (1s)
 }
 
-const REGEX_CLASS_SCROLL_TO_BOTTOM = /react-scroll-to-bottom/g,
-    SELECTOR_SCROLL_TO_BOTTOM = '[class^="react-scroll-to-bottom"]',
-    CLASS_REPLACEMENT = "dont-scroll-to-bottom";
-
+// const REGEX_CLASS_SCROLL_TO_BOTTOM = /react-scroll-to-bottom/g,
+//     SELECTOR_SCROLL_TO_BOTTOM = '[class^="react-scroll-to-bottom"]',
+//     CLASS_REPLACEMENT = "dont-scroll-to-bottom";
 
 // // Scroll-to-bottom mutation observer
 // new MutationObserver(() => {
@@ -344,3 +445,14 @@ const REGEX_CLASS_SCROLL_TO_BOTTOM = /react-scroll-to-bottom/g,
 //     });
 
 // }).observe(document.body, { childList: true, subtree: true });
+
+// function disableAutoScroll() {
+//     const defaultChatScrollElement = nodeMain.getElement([0,0,0,0,0]);
+//     defaultChatScrollElement.className = "scroll-bar";
+//     console.log(defaultChatScrollElement);
+
+//     const newChatScrollElement = defaultChatScrollElement.parentElement;
+//     newChatScrollElement.style.overflowY = "auto";
+//     console.log(newChatScrollElement);
+// }
+
