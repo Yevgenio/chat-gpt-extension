@@ -19,5 +19,6 @@
     list-style-type: none;
     margin: 0;
     padding-left: 20px;
+    /* transition: height 0.3s ease; */
     display: none; /* Initially hidden */
 }

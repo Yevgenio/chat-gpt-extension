@@ -31,6 +31,7 @@ function createFolder(folderName) {
     folderHeader.addEventListener('click', () => {
         const isOpen = folderList.style.display === 'block';
         folderList.style.display = isOpen ? 'none' : 'block';
+        // folderList.style.height = isOpen ? 'auto' : '0';
         arrowIcon.style.transform = isOpen ? 'rotate(90deg)' : 'rotate(180deg)'; // Rotate arrow
     });
 
@@ -49,7 +50,7 @@ function startFolders() {
     // Assuming your sidebar container has an ID 'sidebarContainer'
     const sidebarContainer = document.getElementsByTagName('ol')[0].parentElement.parentElement;
     // Example usage
-    const sampleFolder = createFolder('My Folder');
+    const sampleFolder = createFolder('New Folder');
     const chatItems = sidebarContainer.querySelectorAll('li'); // Assuming <li> elements are the chat items
 
     // Move the first chat item to the sample folder

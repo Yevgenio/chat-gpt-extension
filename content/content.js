@@ -1,79 +1,3 @@
-class ElementNode {
-    constructor(name, element, rootNode, path) {
-        this.name = name;
-        this.element = element;
-        this.rootNode = rootNode;
-        this.path = path;
-    }
-
-    // Method to get the element, redefining if necessary
-    getElement() {
-        if (!this.element) {
-            console.log(`Element ${this.name} is null, attempting to redefine.`);
-            this.redefineElement();
-        }
-        return this.element;
-    }
-
-    // Redefine the element using the rootNode and path
-    redefineElement() {
-        if (!this.rootNode || !this.rootNode.getElement()) {
-            console.log(`Root node or root node's element is undefined in element ${this.name}.`);
-            return null;
-        }
-
-        if (!this.path) {
-            // If no path is specified, use the root node's element directly
-            this.element = this.rootNode.getElement();
-        } else {
-            // Attempt to traverse the DOM to find the element
-            this.element = this.traverseDOM(this.rootNode.getElement(), this.path);
-        }
-
-        if (!this.element) {
-            console.log(`Element ${this.name} could not be redefined.`);
-        }
-    }
-
-    getChild(path) {
-        const currentElement = this.getElement()
-        if(!currentElement) {
-            console.log(`Could not find child of ${this.name} element`)
-            return null;
-        }
-        return this.traverseDOM(currentElement, path);
-
-    }
-
-    // Traverse the DOM to find the element based on the given path
-    traverseDOM(root, path) {
-        let currentElement = root;
-
-        if (!root) {
-            console.log(`Invalid root element for ${this.name}.`);
-            return null;
-        }
-
-        for (let index of path) {
-            if (currentElement && currentElement.children && currentElement.children.length > index) {
-                currentElement = currentElement.children[index];
-            } else {
-                console.log(`In element ${this.name} path was not found: `, path);
-                return null; // Return null if the path is invalid
-            }
-        }
-        // console.log(`In element ${this.name} path was found: `, path);
-        return currentElement;
-    }
-}
-
-
-const nodeBodyContainer = new ElementNode("nodeBodyContainer", document.body, null, null);
-const nodeLayoutContainer = new ElementNode("nodeLayoutContainer", null, nodeBodyContainer, [1]);
-const nodeSidebarRootContainer = new ElementNode("nodeSidebarRootContainer", null, nodeLayoutContainer, [0]);
-const nodeChatRootContainer = new ElementNode("nodeChatRootContainer", null, nodeLayoutContainer, [1]);
-const nodeMain = new ElementNode("nodeMain", null, nodeChatRootContainer, [2]);
-
 // Utility function to create an element with properties
 function buildElement(tag, props = {}) {
     const elem = document.createElement(tag);
@@ -111,7 +35,7 @@ const observer = new MutationObserver((mutations) => {
     if (newContentDetected) {
         clearTimeout(timer);
         timer = setTimeout(() => {
-            manipulateMessages();
+            pageLoaded();
         } , 300)
     }
 });
@@ -120,14 +44,13 @@ const observer = new MutationObserver((mutations) => {
 observer.observe(document.body, { childList: true, subtree: true });
 
 // Function to manipulate articles (create scrollable container and shortcuts)
-function manipulateMessages() {
-    console.log("changes observed");
+function pageLoaded() {
     handleShortcutContainer();
 }
 
 // Function to create or update the shortcut container
 function handleShortcutContainer() {
-    const pageContainer = document.querySelector('body')?.children[1];
+    const pageContainer = document.body.children[1];
 
     // Check if the shortcutContainer already exists
     let shortcutContainer = document.getElementById('shortcutContainer');
@@ -145,48 +68,44 @@ function handleShortcutContainer() {
 
 // Create shortcut buttons for each article inside the container
 function createArticleShortcuts(shortcutContainer) {
-    const articleContainer = nodeMain.getChild([0,0,0,0,0,0]);
-
-    const articles = [...articleContainer.children].slice(1);
-    const chatContainer = articleContainer.parentElement;
+    const articles = document.body.getElementsByTagName("article");
+    const chatContainer = articles[0].parentElement.parentElement;
 
     // Clear the existing contents of the shortcut container
     shortcutContainer.innerHTML = '';
 
     articles.forEach((article, index) => {
-        if(article.tagName == "ARTICLE"){
-            createControlPanel(article, index, articles, chatContainer);
+        createControlPanel(article, index, articles, chatContainer);
 
-            const shortcutButton = buildElement('div', {classList: 'shortcutButton', innerText: index + 1});
+        const shortcutButton = buildElement('div', {classList: 'shortcutButton', innerText: index + 1});
+        
+        // Scroll to the article when the shortcut button is clicked
+        shortcutButton.addEventListener('click', () => {
+            scrollToArticle(article, chatContainer);
+        });
+        
+        shortcutContainer.appendChild(shortcutButton);
+
+        // Find the "Previous response" and "Next response" buttons in the article
+        const previousResponseButton = article.querySelector('button[aria-label="Previous response"]');
+        const nextResponseButton = article.querySelector('button[aria-label="Next response"]');
+        if(previousResponseButton || nextResponseButton) {
+            const proxyBranches = previousResponseButton.parentElement.cloneNode(true);
+            const previousProxyButton = proxyBranches.querySelector('button[aria-label="Previous response"]');
+            const nextProxyButton = proxyBranches.querySelector('button[aria-label="Next response"]');
             
-            // Scroll to the article when the shortcut button is clicked
-            shortcutButton.addEventListener('click', () => {
-                scrollToArticle(article, chatContainer);
+            previousProxyButton.addEventListener('click', () => {
+                previousResponseButton.click();  // Simulate the click on the original button
             });
-            
-            shortcutContainer.appendChild(shortcutButton);
+            nextProxyButton.addEventListener('click', () => {
+                nextResponseButton.click();  // Simulate the click on the original button
+            });
 
-            // Find the "Previous response" and "Next response" buttons in the article
-            const previousResponseButton = article.querySelector('button[aria-label="Previous response"]');
-            const nextResponseButton = article.querySelector('button[aria-label="Next response"]');
-            if(previousResponseButton || nextResponseButton) {
-                const proxyBranches = previousResponseButton.parentElement.cloneNode(true);
-                const previousProxyButton = proxyBranches.querySelector('button[aria-label="Previous response"]');
-                const nextProxyButton = proxyBranches.querySelector('button[aria-label="Next response"]');
-                
-                previousProxyButton.addEventListener('click', () => {
-                    previousResponseButton.click();  // Simulate the click on the original button
-                });
-                nextProxyButton.addEventListener('click', () => {
-                    nextResponseButton.click();  // Simulate the click on the original button
-                });
+            handleBranchClick(previousResponseButton, article, chatContainer, shortcutContainer)
+            handleBranchClick(nextResponseButton, article, chatContainer, shortcutContainer)
 
-                handleBranchClick(previousResponseButton, article, chatContainer, shortcutContainer)
-                handleBranchClick(nextResponseButton, article, chatContainer, shortcutContainer)
-
-                // shortcutButton.appendChild(proxyBranches);
-                shortcutContainer.appendChild(proxyBranches);
-            }
+            // shortcutButton.appendChild(proxyBranches);
+            shortcutContainer.appendChild(proxyBranches);
         }
     });
 
@@ -264,10 +183,8 @@ function scrollToArticle(article, chatContainer) {
 
 // Update shortcut button positions based on scroll, using `in-view` class for styling
 function updateShortcutPositions() {
-
-    const articleContainer = nodeMain.getChild([0,0,0,0,0,0]);
-    const articles = [...articleContainer.children].slice(1);
-
+    const articles = document.body.getElementsByTagName("article");
+    
     const shortcutButtons = nodeLayoutContainer.getElement().getElementsByClassName("shortcutButton");
 
     const windowHeight = window.innerHeight;
@@ -277,20 +194,18 @@ function updateShortcutPositions() {
     let firstInViewIndex = null;
 
     articles.forEach((article, index) => {
-        if(article.tagName == "ARTICLE") {
-            const articleRect = article.getBoundingClientRect();
-            const shortcutButton = shortcutButtons[index];
+        const articleRect = article.getBoundingClientRect();
+        const shortcutButton = shortcutButtons[index];
 
-            // Check if the article is in view
-            const articleInView = !(articleRect.bottom < viewTop || articleRect.top > viewBottom);
+        // Check if the article is in view
+        const articleInView = !(articleRect.bottom < viewTop || articleRect.top > viewBottom);
 
-            if (articleInView) {
-                shortcutButton.classList.add('in-view');  // Add class when the article is in view
-                if (firstInViewIndex === null) 
-                    firstInViewIndex = index;  // Track the first article in view
-            } else {
-                shortcutButton.classList.remove('in-view');  // Remove class when the article is not in view
-            }
+        if (articleInView) {
+            shortcutButton.classList.add('in-view');  // Add class when the article is in view
+            if (firstInViewIndex === null) 
+                firstInViewIndex = index;  // Track the first article in view
+        } else {
+            shortcutButton.classList.remove('in-view');  // Remove class when the article is not in view
         }
     });
 
@@ -303,7 +218,7 @@ function updateShortcutPositions() {
 // Function to scroll the shortcut container to make the button of the first article in view visible
 function scrollToShortcut(index) {
     const shortcutContainer = document.getElementById('shortcutContainer');
-    const shortcutButton = nodeLayoutContainer.getElement().getElementsByClassName("shortcutButton")[index];
+    const shortcutButton = shortcutContainer.getElementsByClassName("shortcutButton")[index];
 
     // Scroll the shortcut container to make the button visible
     const shortcutButtonTop = shortcutButton.offsetTop;
@@ -335,7 +250,6 @@ function createControlPanel(article, index, articles, chatContainer) {
     // Create the control panel container
     const controlPanelContainer = buildElement('div',{classList: 'controlPanelContainer'});
     const controlPanel = buildElement('div',{classList: 'controlPanel'});
-
 
     // Create the "Up" button
     const upButton = buildElement('button',{classList: 'upButton', innerText: '↑'});
@@ -369,11 +283,8 @@ function createControlPanel(article, index, articles, chatContainer) {
     const targetElement = article.children[1].children[0];
 
     // Append controlPanel to the target element if it exists
-    if (targetElement) {
+    if (targetElement) 
         targetElement.appendChild(controlPanelContainer);
-    } else {
-        console.error('Target element not found.');
-    }
 }
 
 // Function to position the control panel dynamically within its container
@@ -410,10 +321,10 @@ function adjustControlPanelPosition(controlPanelContainer, controlPanel) {
 
 // Function to handle adjusting the control panel on page scroll
 function handleControlPanelScroll() {
-    const controlPanelContainers = document.querySelectorAll('.controlPanelContainer');
+    const controlPanelContainers = document.querySelectorAll('div.controlPanelContainer');
 
     controlPanelContainers.forEach((container) => {
-        const controlPanel = container.querySelector('.controlPanel');
+        const controlPanel = container.querySelector('div.controlPanel');
         if (controlPanel) {
             adjustControlPanelPosition(container, controlPanel);
         }
