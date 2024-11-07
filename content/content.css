@@ -93,18 +93,48 @@
     position: relative;
 }
 
-/* Shortcut Buttons */
-.shortcutButton {
-    margin: 10px;
+/* Preview Popup */
+.previewPopup {
+    position: absolute;
+    left: -250px; /* Position the popup to the left of the button */
+    top: 0;
+    width: 200px;
+    max-height: 150px;
+    overflow-y: auto;
+    background-color: var(--main-surface-primary);
+    border: 1px solid var(--main-surface-tertiary);
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    display: none; /* Initially hidden */
+    z-index: 10;
+}
+
+/* Show the preview when the button is hovered */
+.shortcutButton:hover + .previewPopup {
+    display: block;
+}
+
+/* Message-like style for user */
+.shortcutButton.user {
+    position: relative;
+    margin: 10px 10px 10px auto;
     background-color: var(--main-surface-primary);
     border: 2px solid var(--main-surface-tertiary);
-    color: var(--text-secondary);
+    border-radius: 20px 20px 20px 0; /* Rounded corners with a pointy bottom-right */
     padding: 10px;
-    text-align: center;
-    border-radius: 10px;
-    display: block;
-    cursor: pointer;
-    transition: background-color 0.5s ease;
+    text-align: left;
+}
+
+/* Message-like style for agent */
+.shortcutButton.agent {
+    position: relative;
+    margin: 10px auto 10px 10px;
+    background-color: var(--main-surface-primary);
+    border: 2px solid var(--main-surface-tertiary);
+    border-radius: 20px 20px 0 20px; /* Rounded corners with a pointy bottom-left */
+    padding: 10px;
+    text-align: right;
 }
 
 .shortcutButton:hover {
