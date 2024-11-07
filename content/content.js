@@ -24,7 +24,7 @@ function setupArticleObserver() {
 
 function getMainContainer() {
     if (!getMainContainer.container) {
-        getMainContainer.container = document.querySelector("main");
+        getMainContainer.container = document.body.querySelector("main");
         if (getMainContainer.container) {
             // Set up the MutationObserver when the main container is found
             setupArticleObserver();
@@ -58,7 +58,7 @@ function getShortcutContainer() {
 
 function getShortcutButtons() {
     // If shortcut buttons are already cached, return them
-    if (!shortcutButtons) {
+    if (!shortcutButtons) { //not refreshing!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         const container = getShortcutContainer();
         if (container) {
             // Cache buttons as a static array
@@ -130,8 +130,6 @@ function handleShortcutContainer() {
     
     if (!shortcutContainer) { //if doesent exist
         shortcutContainer = buildElement('div',{id: 'shortcutContainer'});
-        const resizerElement = buildElement('div',{id: 'resizer'});
-        pageContainer.appendChild(resizerElement);
         pageContainer.appendChild(shortcutContainer);
     }
 
@@ -155,64 +153,85 @@ function createArticleShortcuts(shortcutContainer) {
         createControlPanel(article, index, articles, chatContainer);
 
         // Determine if the article belongs to the user or the agent
-        const isUser = index % 2 !== 0;
+        
+        const isUser = index % 2 !== 1;
+
         const className = isUser ? 'shortcutButton user' : 'shortcutButton agent';
         const shortcutButton = buildElement('div', { classList: className, innerText: index + 1 });
 
-        // Create the preview popup element as a sibling of the shortcut button
-        const previewPopup = buildElement('div', { classList: 'previewPopup' });
-        shortcutButton.appendChild(previewPopup);
         shortcutContainer.appendChild(shortcutButton);
-
-        // Fetch the content for the preview on hover
-        shortcutButton.addEventListener('mouseenter', () => {
-            const response = article.textContent;
-            console.log(response);
-            if (response) {
-                shortcutButton.innerText = response.trim().substring(0, 200) + '...';
-            } else {
-                shortcutButton.innerText = 'No content available';
-            }
-        });
-
-        // Clear the preview content when the mouse leaves
-        shortcutButton.addEventListener('mouseleave', () => {
-            shortcutButton.innerText = '';
-        });
-
+        
         // Scroll to the article when the shortcut button is clicked
         shortcutButton.addEventListener('click', () => {
             scrollToArticle(article, chatContainer);
         });
 
-        // Handle "Previous response" and "Next response" buttons
-        const previousResponseButton = article.querySelector('button[aria-label="Previous response"]');
-        const nextResponseButton = article.querySelector('button[aria-label="Next response"]');
-        if (previousResponseButton || nextResponseButton) {
-            const proxyBranches = previousResponseButton.parentElement.cloneNode(true);
-            const previousProxyButton = proxyBranches.querySelector('button[aria-label="Previous response"]');
-            const nextProxyButton = proxyBranches.querySelector('button[aria-label="Next response"]');
-
-            previousProxyButton.addEventListener('click', () => {
-                previousResponseButton.click();  // Simulate the click on the original button
-            });
-            nextProxyButton.addEventListener('click', () => {
-                nextResponseButton.click();  // Simulate the click on the original button
-            });
-
-            handleBranchClick(previousResponseButton, article, chatContainer, shortcutContainer);
-            handleBranchClick(nextResponseButton, article, chatContainer, shortcutContainer);
-
-            shortcutContainer.appendChild(proxyBranches);
-        }
+        handleShortcutHover(article, shortcutButton,isUser);
+        handleBranchShortcuts(article, chatContainer, shortcutContainer);
     });
 
     if (chatContainer) {
         chatContainer.addEventListener('scroll', updateShortcutPositions);
-        chatContainer.addEventListener('scroll', handleControlPanelScroll);
     }
 
     updateShortcutPositions();  // Initially position the buttons
+}
+
+function handleShortcutHover(article, shortcutButton, isUser) {
+    // Create the preview popup element as a sibling of the shortcut button
+    const className = isUser ? 'previewPopup user' : 'previewPopup agent';
+    const previewPopup = buildElement('div', { classList: className});
+
+    shortcutButton.appendChild(previewPopup);
+
+    // Fetch the content for the preview on hover
+    shortcutButton.addEventListener('mouseenter', () => {
+    // ================================================================================================
+    // const messageElement = article.querySelector('[data-message-author-role]');
+    // const isUser = messageElement?.getAttribute('data-message-author-role') === 'user';     
+    // ================================================================================================
+
+        const response = article.querySelector('[data-message-author-role]');
+        previewPopup.innerHTML = isUser ? response.firstChild.firstChild.innerHTML : response.innerHTML;
+        
+        previewPopup.style.display = "block";
+        const rect = shortcutButton.getBoundingClientRect();
+        previewPopup.style.top = `${rect.top}px`;
+        previewPopup.style.left = `${rect.left - previewPopup.offsetWidth}px`; // Position to the left of the button
+
+    
+    });
+
+    // Clear the preview content when the mouse leaves
+    shortcutButton.addEventListener('mouseleave', () => {
+        previewPopup.innerHTML = '';
+        previewPopup.style.display = "none"
+    });
+
+}
+
+function handleBranchShortcuts(article, chatContainer, shortcutContainer) {
+    // Handle "Previous response" and "Next response" buttons
+    const previousResponseButton = article.querySelector('button[aria-label="Previous response"]');
+    const nextResponseButton = article.querySelector('button[aria-label="Next response"]');
+
+    if (previousResponseButton || nextResponseButton) {
+        const proxyBranches = previousResponseButton.parentElement.cloneNode(true);
+        const previousProxyButton = proxyBranches.querySelector('button[aria-label="Previous response"]');
+        const nextProxyButton = proxyBranches.querySelector('button[aria-label="Next response"]');
+
+        previousProxyButton.addEventListener('click', () => {
+            previousResponseButton.click();  // Simulate the click on the original button
+        });
+        nextProxyButton.addEventListener('click', () => {
+            nextResponseButton.click();  // Simulate the click on the original button
+        });
+
+        handleBranchClick(previousResponseButton, article, chatContainer, shortcutContainer);
+        handleBranchClick(nextResponseButton, article, chatContainer, shortcutContainer);
+
+        shortcutContainer.appendChild(proxyBranches);
+    }
 }
 
 // Function to prevent default scrolling when clicking the next or previous buttons
@@ -230,9 +249,9 @@ function handleBranchClick(branchButton, article, chatContainer, shortcutContain
         branchButton.click();  // Trigger the original click event on the button
 
         // Restore the previous scroll position
-        setTimeout(() => {
-            scrollToArticle(article, chatContainer);
-        }, 2000);  // Delay to allow the DOM update
+        // setTimeout(() => {
+        //     scrollToArticle(article, chatContainer);
+        // }, 2000);  // Delay to allow the DOM update
 
         setTimeout(() => {
             createArticleShortcuts(shortcutContainer);  // Refresh the shortcut container on response change
@@ -290,13 +309,19 @@ function updateShortcutPositions() {
     const viewBottom = windowHeight * 0.2;// * 0.7;
 
     articles.forEach((article, index) => {
+        
         const articleRect = article.getBoundingClientRect();
         const shortcutButton = shortcutButtons[index];
 
+        if(!shortcutButton) {
+            return;
+        }
         // Check if the article is in view
         const articleInView = !(articleRect.bottom < viewTop || articleRect.top > viewBottom);
 
         if (articleInView) {
+            console.log(index);
+            console.log(shortcutButton);
             shortcutButton.classList.add('in-view');  // Add class when the article is in view
             scrollToShortcut(shortcutButton);
         } else {
@@ -371,6 +396,8 @@ function createControlPanel(article, index, articles, chatContainer) {
     // Append controlPanel to the target element if it exists
     if (targetElement) 
         targetElement.appendChild(controlPanelContainer);
+
+    chatContainer.addEventListener('scroll', handleControlPanelScroll);
 }
 
 // Function to position the control panel dynamically within its container
@@ -454,3 +481,21 @@ function applyGlowEffect(element) {
 //     console.log(newChatScrollElement);
 // }
 
+const container = getMainContainer();
+const observer2 = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+            // Temporarily disable scrolling by saving and restoring scroll position
+            const currentScroll = container.scrollTop;
+            console.log(mutation);
+
+            // Check if the scroll is at the bottom to selectively disable
+            if (container.scrollTop + container.clientHeight >= container.scrollHeight) {
+                container.scrollTop = currentScroll; // Reset scroll position to prevent scroll to bottom
+            }
+        }
+    }
+});
+
+// Start observing
+observer2.observe(container, { attributes: true, attributeFilter: ['class'] });
