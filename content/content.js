@@ -16,6 +16,7 @@ function setupArticleObserver() {
     articleObserver = new MutationObserver(() => {
         // Invalidate the cache when changes are detected
         articlesCacheValid = false;
+        buttonCacheValid = false;
     });
 
     // Start observing the main container for changes in its child elements
@@ -23,7 +24,7 @@ function setupArticleObserver() {
 }
 
 function getMainContainer() {
-    if (!getMainContainer.container) {
+    if (!getMainContainer.container || !document.body.contains(getMainContainer.container)) {
         getMainContainer.container = document.body.querySelector("main");
         if (getMainContainer.container) {
             // Set up the MutationObserver when the main container is found
@@ -34,7 +35,7 @@ function getMainContainer() {
 }
 
 function getArticleElements() {
-    if (!articlesCacheValid) {
+    if (!articleElements || !articlesCacheValid) {
         // Re-query the articles if the cache is invalid
         const container = getMainContainer();
         if (container) {
@@ -51,6 +52,11 @@ function getShortcutContainer() {
     // Cache shortcut container if not already cached
     if (!shortcutContainer) {
         shortcutContainer = document.getElementById("shortcutContainer");
+        if (!shortcutContainer) { //if doesent exist
+            const pageContainer = document.body.children[2];
+            shortcutContainer = buildElement('div',{id: 'shortcutContainer'});
+            pageContainer.appendChild(shortcutContainer);
+        }
         shortcutButtons = null; // Reset buttons cache if shortcut container is updated
     }
     return shortcutContainer;
@@ -58,11 +64,12 @@ function getShortcutContainer() {
 
 function getShortcutButtons() {
     // If shortcut buttons are already cached, return them
-    if (!shortcutButtons) { //not refreshing!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    if (!shortcutButtons || !buttonCacheValid) { //not refreshing!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         const container = getShortcutContainer();
         if (container) {
             // Cache buttons as a static array
             shortcutButtons = Array.from(container.getElementsByClassName("shortcutButton"));
+            buttonCacheValid = true;
         } else {
             shortcutButtons = []; // Return an empty array if container not found
         }
@@ -123,16 +130,9 @@ function pageLoaded() {
 
 // Function to create or update the shortcut container
 function handleShortcutContainer() {
-    const pageContainer = document.body.children[1];
-
     // Check if the shortcutContainer already exists
-    let shortcutContainer = getShortcutContainer();
+    const shortcutContainer = getShortcutContainer();
     
-    if (!shortcutContainer) { //if doesent exist
-        shortcutContainer = buildElement('div',{id: 'shortcutContainer'});
-        pageContainer.appendChild(shortcutContainer);
-    }
-
     // Create the article shortcuts inside the shortcut container
     createArticleShortcuts(shortcutContainer);
 }
@@ -193,7 +193,7 @@ function handleShortcutHover(article, shortcutButton, isUser) {
 
         const response = article.querySelector('[data-message-author-role]');
         previewPopup.innerHTML = isUser ? response.firstChild.firstChild.innerHTML : response.innerHTML;
-        
+        //error: Cannot read properties of null (reading 'firstChild')
         previewPopup.style.display = "block";
         const rect = shortcutButton.getBoundingClientRect();
         previewPopup.style.top = `${rect.top}px`;
@@ -320,8 +320,6 @@ function updateShortcutPositions() {
         const articleInView = !(articleRect.bottom < viewTop || articleRect.top > viewBottom);
 
         if (articleInView) {
-            console.log(index);
-            console.log(shortcutButton);
             shortcutButton.classList.add('in-view');  // Add class when the article is in view
             scrollToShortcut(shortcutButton);
         } else {
@@ -434,7 +432,11 @@ function adjustControlPanelPosition(controlPanelContainer, controlPanel) {
 
 // Function to handle adjusting the control panel on page scroll
 function handleControlPanelScroll() {
-    const chatContainer = getArticleElements()[0].parentElement;
+    const articles = getArticleElements();
+
+    if(!articles || !articles[0]) return;
+
+    const chatContainer = articles[0].parentElement;
     const controlPanelContainers = chatContainer.querySelectorAll('div.controlPanelContainer');
 
     controlPanelContainers.forEach((container) => {
@@ -481,21 +483,23 @@ function applyGlowEffect(element) {
 //     console.log(newChatScrollElement);
 // }
 
-const container = getMainContainer();
-const observer2 = new MutationObserver((mutations) => {
-    for (const mutation of mutations) {
-        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-            // Temporarily disable scrolling by saving and restoring scroll position
-            const currentScroll = container.scrollTop;
-            console.log(mutation);
 
-            // Check if the scroll is at the bottom to selectively disable
-            if (container.scrollTop + container.clientHeight >= container.scrollHeight) {
-                container.scrollTop = currentScroll; // Reset scroll position to prevent scroll to bottom
-            }
-        }
-    }
-});
+//////////////////////////////////////////////////////////
+// const container = getMainContainer();
+// const observer2 = new MutationObserver((mutations) => {
+//     for (const mutation of mutations) {
+//         if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+//             // Temporarily disable scrolling by saving and restoring scroll position
+//             const currentScroll = container.scrollTop;
+//             console.log(mutation);
 
-// Start observing
-observer2.observe(container, { attributes: true, attributeFilter: ['class'] });
+//             // Check if the scroll is at the bottom to selectively disable
+//             if (container.scrollTop + container.clientHeight >= container.scrollHeight) {
+//                 container.scrollTop = currentScroll; // Reset scroll position to prevent scroll to bottom
+//             }
+//         }
+//     }
+// });
+
+// // Start observing
+// observer2.observe(container, { attributes: true, attributeFilter: ['class'] });
